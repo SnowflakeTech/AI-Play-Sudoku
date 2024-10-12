@@ -20,6 +20,12 @@ while running:
             running = False
         elif event.type == pg.MOUSEBUTTONDOWN:
             grid.handle_mouse_click(pg.mouse.get_pos())  # Xử lý khi click chuột
+        elif event.type == pg.KEYDOWN:
+            if event.key == pg.K_v:  # Nhấn phím 'V' để kiểm tra lưới Sudoku
+                if grid.is_valid_grid():
+                    print("Sudoku hợp lệ!")
+                else:
+                    print("Sudoku không hợp lệ!")
     
     # Cập nhật hover mỗi lần chuột di chuyển
     grid.handle_mouse_hover(pg.mouse.get_pos())

@@ -61,6 +61,38 @@ class Grid:
         self.selected_number = None  # Số đang được chọn để điền vào ô
         self.hovered_number = None  # Số nào đang được hover
         
+    def check_rows(self) -> bool:
+        """Kiểm tra các hàng xem có tuân theo quy tắc Sudoku không."""
+        for row in self.grid:
+            if not self.is_valid_group(row):
+                return False
+        return True
+    
+    def check_subgrids(self) -> bool:
+        """Kiểm tra các vùng 3x3 xem có tuân theo quy tắc Sudoku không."""
+        for box_row in range(0, grid_size, sub_grid_size):
+            for box_col in range(0, grid_size, sub_grid_size):
+                subgrid = []
+                for r in range(box_row, box_row + sub_grid_size):
+                    for c in range(box_col, box_col + sub_grid_size):
+                        subgrid.append(self.grid[r][c])
+                if not self.is_valid_group(subgrid):
+                    return False
+        return True
+    
+    def is_valid_group(self, group: list) -> bool:
+        """Kiểm tra xem một nhóm số (hàng, cột hoặc vùng 3x3) có hợp lệ không."""
+        numbers = [num for num in group if num != 0]  # Bỏ qua các ô trống
+        return len(numbers) == len(set(numbers))  # Nếu số lượng các số không trùng khớp, nhóm không hợp lệ
+    
+    def show(self):
+        for row in self.grid:
+            print(row)
+            
+    def is_valid_grid(self) -> bool:
+        """Kiểm tra toàn bộ lưới Sudoku xem có hợp lệ không."""
+        return self.check_rows() and self.check_columns() and self.check_subgrids()
+    
     def draw_lines(self, pg, surface):
         for index, line in enumerate(self.line_coordinates):
             if index == 2 or index == 5 or index == 10 or index == 13:
