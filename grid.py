@@ -3,16 +3,16 @@ from random import sample
 
 def create_lines_coordinates(cell_size: int):
     points = []
-    
+
     # Vẽ các đường ngang và dọc
     for i in range(1, 9):  # Đường ngang
         y = i * cell_size
         points.append(((0, y), (cell_size * 9, y)))  # Điều chỉnh chiều rộng của lưới
-    
+
     for i in range(1, 10):  # Đường dọc
         x = i * cell_size
         points.append(((x, 0), (x, cell_size * 9)))  # Điều chỉnh chiều cao của lưới
-    
+
     return points
 
 
@@ -60,14 +60,23 @@ class Grid:
         self.selected_cell = None  # Vị trí ô được chọn để điền số
         self.selected_number = None  # Số đang được chọn để điền vào ô
         self.hovered_number = None  # Số nào đang được hover
-        
+        self.highlighted_cells = []  # Danh sách các ô cần làm nổi bật
+
     def check_rows(self) -> bool:
         """Kiểm tra các hàng xem có tuân theo quy tắc Sudoku không."""
         for row in self.grid:
             if not self.is_valid_group(row):
                 return False
         return True
-    
+
+    def check_columns(self) -> bool:
+        """Kiểm tra các cột xem có tuân theo quy tắc Sudoku không."""
+        for col in range(grid_size):
+            column = self.get_column(col)
+            if not self.is_valid_group(column):
+                return False
+        return True
+
     def check_subgrids(self) -> bool:
         """Kiểm tra các vùng 3x3 xem có tuân theo quy tắc Sudoku không."""
         for box_row in range(0, grid_size, sub_grid_size):
@@ -79,20 +88,20 @@ class Grid:
                 if not self.is_valid_group(subgrid):
                     return False
         return True
-    
+
     def is_valid_group(self, group: list) -> bool:
         """Kiểm tra xem một nhóm số (hàng, cột hoặc vùng 3x3) có hợp lệ không."""
         numbers = [num for num in group if num != 0]  # Bỏ qua các ô trống
         return len(numbers) == len(set(numbers))  # Nếu số lượng các số không trùng khớp, nhóm không hợp lệ
-    
+
     def show(self):
         for row in self.grid:
             print(row)
-            
+
     def is_valid_grid(self) -> bool:
         """Kiểm tra toàn bộ lưới Sudoku xem có hợp lệ không."""
         return self.check_rows() and self.check_columns() and self.check_subgrids()
-    
+
     def draw_lines(self, pg, surface):
         for index, line in enumerate(self.line_coordinates):
             if index == 2 or index == 5 or index == 10 or index == 13:
@@ -103,19 +112,51 @@ class Grid:
     def draw_numbers(self, surface) -> None:
         for y in range(len(self.grid)):
             for x in range(len(self.grid[y])):
-                if self.get_cell(x, y) != 0:
-                    color = (0, 200, 255) if not self.occupied_cells[y][x] else (255, 0, 0)  # Số của các ô preoccupied có màu đỏ
-                    text_surface = self.game_font.render(str(self.get_cell(x, y)), True, color)
+                cell_value = self.get_cell(x, y)
+                if cell_value != 0:
+                    # Kiểm tra màu dựa trên trạng thái của ô
+                    if (x, y) == self.selected_cell:
+                        color = (200, 255, 200)  # Màu xanh nhạt cho ô được chọn
+                    elif not self.occupied_cells[y][x]:
+                        # Các ô không bị khóa sẽ có màu xanh nước biển
+                        color = (0, 200, 255)
+                    else:
+                        # Các ô ban đầu (preoccupied) sẽ có màu đỏ
+                        color = (255, 0, 0)
+
+                    # Vẽ số vào ô
+                    text_surface = self.game_font.render(str(cell_value), True, color)
                     text_rect = text_surface.get_rect(center=(x * self.cell_size + self.cell_size // 2,
                                                               y * self.cell_size + self.cell_size // 2))
-                    surface.blit(text_surface, text_rect)  # Vẽ số ở vị trí đã căn giữa
+                    surface.blit(text_surface, text_rect)
+
+    def get_row(self, row):
+        """Trả về danh sách các giá trị trong một hàng."""
+        return self.grid[row]
+
+    def get_column(self, col):
+        """Trả về danh sách các giá trị trong một cột."""
+        return [self.grid[row][col] for row in range(grid_size)]
+
+    def draw_highlighted_cells(self, surface):
+        """Làm nổi bật hàng và cột của ô đang được chọn."""
+        for x, y in self.highlighted_cells:
+            rect = pg.Rect(x * self.cell_size, y * self.cell_size, self.cell_size, self.cell_size)
+            pg.draw.rect(surface, (200, 200, 255), rect, 0)  # Màu xanh nhạt cho ô nổi bật
+
+    def draw(self, surface):
+        # Gọi vẽ các thành phần
+        self.draw_highlighted_cells(surface)  # Vẽ các ô nổi bật trước
+        self.draw_lines(pg, surface)
+        self.draw_numbers(surface)
+        self.draw_number_selection_menu(surface)
 
     def draw_number_selection_menu(self, surface):
         """Vẽ bảng chọn số với 2 cột bên phải lưới."""
         menu_x1 = grid_size * self.cell_size + 20  # Cột thứ nhất
         menu_x2 = grid_size * self.cell_size + 90  # Cột thứ hai
         menu_y = 20
-        
+
         for i in range(1, 6):
             # Vẽ cột đầu tiên (số 1 đến 5)
             rect = pg.Rect(menu_x1, menu_y + (i - 1) * 60, 50, 50)
@@ -141,13 +182,21 @@ class Grid:
             surface.blit(text_surface, text_rect)
 
     def handle_mouse_click(self, pos):
-        """Xử lý sự kiện khi người chơi click chuột vào một ô."""
+        """Xử lý sự kiện khi người chơi click chuột vào một ô hoặc bảng chọn số."""
         x, y = pos[0] // self.cell_size, pos[1] // self.cell_size
-        if x < grid_size and y < grid_size and not self.occupied_cells[y][x]:
-            print(f"Clicked on cell ({x}, {y})")
-            if self.selected_number is not None:  # Chỉ điền số khi có số được chọn
-                self.set_cell(x, y, self.selected_number)
-        elif x >= grid_size:  # Nếu click vào khu vực bảng chọn số
+        if x < grid_size and y < grid_size:
+            # Nếu click vào lưới Sudoku
+            self.selected_cell = (x, y)
+            self.highlighted_cells = [(x, i) for i in range(grid_size)] + [(i, y) for i in range(grid_size)]
+            if not self.occupied_cells[y][x] and self.selected_number is not None:
+                # Chỉ điền số khi có số được chọn và hợp lệ
+                if self.is_number_valid(self.selected_number, x, y):
+                    self.set_cell(x, y, self.selected_number)
+                    print(f"Số {self.selected_number} được đặt vào ô ({x}, {y})")
+                else:
+                    print("Lỗi: Số không hợp lệ!")
+        else:
+            # Nếu click vào bảng chọn số
             self.handle_number_selection(pos)
 
     def handle_number_selection(self, pos):
@@ -163,6 +212,11 @@ class Grid:
             if 6 <= selected_index <= 9:
                 self.selected_number = selected_index
 
+        print(f"Selected number: {self.selected_number}")
+
+    def set_selected_number(self, number: int) -> None:
+        """Thiết lập số được chọn từ menu số và kiểm tra hợp lệ."""
+        self.selected_number = number
         print(f"Selected number: {self.selected_number}")
 
     def handle_mouse_hover(self, pos):
@@ -182,16 +236,31 @@ class Grid:
 
     def get_cell(self, x: int, y: int) -> int:
         return self.grid[y][x]
-        
+
     def set_cell(self, x: int, y: int, value: int) -> None:
         """Chỉ cho phép thay đổi giá trị của các ô không bị preoccupied."""
         if not self.occupied_cells[y][x]:
             self.grid[y][x] = value
-        
+
     def show(self):
         for cell in self.grid:
             print(cell)
-            
+
+    def is_number_valid(self, number, x, y) -> bool:
+        """Kiểm tra xem số có hợp lệ tại vị trí x, y không."""
+        # Tạm thời lưu số hiện tại trong ô để kiểm tra
+        current_value = self.grid[y][x]
+        self.grid[y][x] = number
+
+        # Kiểm tra xem số có hợp lệ trong hàng, cột và ô 3x3 không
+        is_valid = self.check_rows() and self.check_columns() and self.check_subgrids()
+
+        # Khôi phục giá trị cũ trong ô
+        self.grid[y][x] = current_value
+        return is_valid
+
+
+
 if __name__ == '__main__':
     pg.font.init()
     game_font = pg.font.SysFont(name='Cascadia Code', size=30)  # Giảm kích thước font chữ
