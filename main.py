@@ -1,6 +1,8 @@
 import pygame as pg
 import os
 from grid import Grid, grid_size
+from menu import main_menu
+from instructions import show_instructions
 
 # Khởi tạo các thông số
 os.environ['SDL_VIDEO_WINDOWS_POS'] = "%d, %d" % (400, 100)
@@ -12,45 +14,6 @@ pg.init()
 pg.font.init()
 game_font = pg.font.SysFont(name='Comic Sans MS', size=30)
 menu_font = pg.font.SysFont(name='Comic Sans MS', size=50)
-
-def main_menu():
-    """Hiển thị menu chính."""
-    while True:
-        surface.fill((30, 30, 30))  # Màu nền cho menu
-        title_text = menu_font.render("Sudoku", True, (255, 255, 255))
-        play_text = game_font.render("Play", True, (0, 255, 0))
-        instructions_text = game_font.render("Instructions", True, (0, 255, 0))
-        quit_text = game_font.render("Quit", True, (255, 0, 0))
-
-        # Vẽ tiêu đề và các nút
-        surface.blit(title_text, (WIDTH // 2 - title_text.get_width() // 2, 100))
-        surface.blit(play_text, (WIDTH // 2 - play_text.get_width() // 2, 250))
-        surface.blit(instructions_text, (WIDTH // 2 - instructions_text.get_width() // 2, 350))
-        surface.blit(quit_text, (WIDTH // 2 - quit_text.get_width() // 2, 450))
-
-        # Kiểm tra sự kiện click
-        for event in pg.event.get():
-            if event.type == pg.QUIT:
-                pg.quit()
-                quit()
-            elif event.type == pg.MOUSEBUTTONDOWN:
-                mouse_x, mouse_y = pg.mouse.get_pos()
-
-                # Kiểm tra click vào nút "Play"
-                if WIDTH // 2 - play_text.get_width() // 2 <= mouse_x <= WIDTH // 2 + play_text.get_width() // 2 and 250 <= mouse_y <= 250 + play_text.get_height():
-                    return  # Bắt đầu trò chơi
-
-                # Kiểm tra click vào nút "Instructions"
-                elif WIDTH // 2 - instructions_text.get_width() // 2 <= mouse_x <= WIDTH // 2 + instructions_text.get_width() // 2 and 350 <= mouse_y <= 350 + instructions_text.get_height():
-                    print("Instructions: Complete the grid so that every row, column, and 3x3 box contains the numbers 1 to 9 without duplicates.")
-
-                # Kiểm tra click vào nút "Quit"
-                elif WIDTH // 2 - quit_text.get_width() // 2 <= mouse_x <= WIDTH // 2 + quit_text.get_width() // 2 and 450 <= mouse_y <= 450 + quit_text.get_height():
-                    pg.quit()
-                    quit()
-
-        pg.display.update()
-
 
 # Hàm chính để chạy trò chơi
 def play_game():
@@ -102,7 +65,16 @@ def play_game():
     pg.quit()
 
 
-# Chạy menu chính
-main_menu()
-# Khi "Play" được chọn, chạy trò chơi
-play_game()
+# Chạy menu chính và điều hướng giữa các lựa chọn
+if __name__ == "__main__":
+    while True:
+        try:
+            choice = main_menu(surface, WIDTH, HEIGHT)
+            if choice == "play":
+                play_game()
+            elif choice == "instructions":
+                show_instructions(surface, game_font, WIDTH, HEIGHT)
+        except SystemExit:
+            break
+    pg.quit()
+
