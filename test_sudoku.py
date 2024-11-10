@@ -48,5 +48,35 @@ class TestSudoku(unittest.TestCase):
         """Kiểm tra việc phát hiện số không hợp lệ."""
         self.assertFalse(self.grid.is_number_valid(10, 0, 0))  # 10 là số không hợp lệ
 
+    class TestSudokuUI(unittest.TestCase):
+        def setUp(self):
+            pg.init()
+            pg.font.init()
+            self.font = pg.font.SysFont("Comic Sans MS", 30)
+            self.grid = Grid(self.font)
+            self.surface = pg.Surface((600, 600))
+
+        def test_clear_button(self):
+            """Kiểm tra nút Clear hoạt động đúng."""
+            # Mô phỏng nhấn nút Clear
+            clear_x, clear_y = grid_size * self.grid.cell_size + 30, 5 * self.grid.cell_size + 280
+            event = pg.event.Event(pg.MOUSEBUTTONDOWN, {"pos": (clear_x, clear_y)})
+            self.grid.handle_mouse_click(event.pos)
+
+            # Kiểm tra lưới đã được xóa
+            for y in range(grid_size):
+                for x in range(grid_size):
+                    if not self.grid.occupied_cells[y][x]:
+                        self.assertEqual(self.grid.grid[y][x], 0)
+
+        def test_number_selection(self):
+            """Kiểm tra chọn số từ bảng chọn số."""
+            number_x, number_y = grid_size * self.grid.cell_size + 40, 40
+            event = pg.event.Event(pg.MOUSEBUTTONDOWN, {"pos": (number_x, number_y)})
+            self.grid.handle_mouse_click(event.pos)
+
+            # Kiểm tra số được chọn
+            self.assertEqual(self.grid.selected_number, 1)
+
 if __name__ == "__main__":
     unittest.main()
