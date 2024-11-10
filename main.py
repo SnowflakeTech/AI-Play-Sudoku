@@ -53,8 +53,9 @@ def play_game():
                 running = False
             elif event.type == pg.MOUSEBUTTONDOWN:
                 x, y = pg.mouse.get_pos()
+
                 # Kiểm tra nếu nhấn nút Solve
-                if grid_size * grid.cell_size + 20 <= x <= grid_size * grid.cell_size + 120 and 5 * grid.cell_size + 100 <= y <= 5 * grid.cell_size + 150:
+                if grid_size * grid.cell_size + 20 <= x <= grid_size * grid.cell_size + 120 and 5 * grid.cell_size + 140 <= y <= 5 * grid.cell_size + 190:
                     board = [[grid.get_cell(i, j) for i in range(9)] for j in range(9)]
                     if solve_sudoku(board):
                         for j in range(9):
@@ -63,15 +64,16 @@ def play_game():
                         current_message = "Solved successfully!"
                     else:
                         current_message = "Failed to solve Sudoku."
+
                 # Kiểm tra nếu nhấn nút Check
-                elif grid_size * grid.cell_size + 20 <= x <= grid_size * grid.cell_size + 120 and 5 * grid.cell_size + 160 <= y <= 5 * grid.cell_size + 210:
+                elif grid_size * grid.cell_size + 20 <= x <= grid_size * grid.cell_size + 120 and 5 * grid.cell_size + 200 <= y <= 5 * grid.cell_size + 250:
                     if grid.is_valid_grid():
                         current_message = "Sudoku is valid!"
                     else:
                         current_message = "Sudoku is invalid!"
+                # Xử lý click vào lưới Sudoku
                 else:
                     grid.handle_mouse_click((x, y))
-                    current_message = f"Selected cell: {x}, {y}"
 
         surface.fill((0, 0, 0))
         grid.draw(surface)
@@ -101,7 +103,7 @@ def play_game():
         surface.blit(time_surface, (grid_size * grid.cell_size + 20, 5 * grid.cell_size + 20 + 60))
 
         # Hiển thị thông báo
-        show_message(surface, current_message, game_font, (255, 255, 255), (50, HEIGHT - 50))
+        show_message(surface, current_message, game_font, (255, 255, 255), (80, 450))
 
         pg.display.update()
         clock.tick(60)

@@ -61,6 +61,7 @@ class Grid:
         self.selected_number = None  # Số đang được chọn để điền vào ô
         self.hovered_number = None  # Số nào đang được hover
         self.highlighted_cells = []  # Danh sách các ô cần làm nổi bật
+        self.status_message = ""
 
     def check_rows(self) -> bool:
         """Kiểm tra các hàng xem có tuân theo quy tắc Sudoku không."""
@@ -150,6 +151,14 @@ class Grid:
         self.draw_lines(pg, surface)
         self.draw_numbers(surface)
         self.draw_number_selection_menu(surface)
+        self.draw_highlighted_cells(surface)
+        self.draw_lines(pg, surface)
+        self.draw_numbers(surface)
+        self.draw_number_selection_menu(surface)
+        if self.status_message:
+            message_surface = self.game_font.render(self.status_message, True, (255, 255, 255))
+            surface.blit(message_surface, (50, grid_size * self.cell_size + 50))
+
 
     def draw_number_selection_menu(self, surface):
         """Vẽ bảng chọn số với 2 cột bên phải lưới."""
@@ -184,20 +193,24 @@ class Grid:
     def handle_mouse_click(self, pos):
         """Xử lý sự kiện khi người chơi click chuột vào một ô hoặc bảng chọn số."""
         x, y = pos[0] // self.cell_size, pos[1] // self.cell_size
+        # Kiểm tra click trong lưới Sudoku
         if x < grid_size and y < grid_size:
-            # Nếu click vào lưới Sudoku
             self.selected_cell = (x, y)
             self.highlighted_cells = [(x, i) for i in range(grid_size)] + [(i, y) for i in range(grid_size)]
             if not self.occupied_cells[y][x] and self.selected_number is not None:
-                # Chỉ điền số khi có số được chọn và hợp lệ
                 if self.is_number_valid(self.selected_number, x, y):
                     self.set_cell(x, y, self.selected_number)
-                    print(f"Số {self.selected_number} được đặt vào ô ({x}, {y})")
+                    self.status_message = f"Number {self.selected_number} is placed in box ({x}, {y})"
                 else:
-                    print("Lỗi: Số không hợp lệ!")
-        else:
-            # Nếu click vào bảng chọn số
+                    self.status_message = "Error: Number is invalid!"
+        # Kiểm tra click trong bảng chọn số
+        elif (grid_size * self.cell_size + 20 <= pos[0] <= grid_size * self.cell_size + 140 and
+              20 <= pos[1] <= 320):
             self.handle_number_selection(pos)
+        else:
+            # Click ngoài lưới Sudoku và bảng chọn số
+            self.selected_cell = None
+            self.status_message = ""  # Xóa thông báo
 
     def handle_number_selection(self, pos):
         """Xử lý chọn số từ bảng chọn số."""
@@ -207,12 +220,17 @@ class Grid:
             selected_index = (pos[1] - 20) // 60 + 1
             if 1 <= selected_index <= 5:
                 self.selected_number = selected_index
+                self.status_message = f"Selected number: {self.selected_number}"
         elif menu_x2 <= pos[0] < menu_x2 + 50:  # Cột 2
             selected_index = (pos[1] - 20) // 60 + 6
             if 6 <= selected_index <= 9:
                 self.selected_number = selected_index
+                self.status_message = f"Selected number: {self.selected_number}"
 
-        print(f"Selected number: {self.selected_number}")
+    def set_cell(self, x: int, y: int, value: int) -> None:
+        """Chỉ cho phép thay đổi giá trị của các ô không bị preoccupied."""
+        if not self.occupied_cells[y][x]:
+            self.grid[y][x] = value
 
     def set_selected_number(self, number: int) -> None:
         """Thiết lập số được chọn từ menu số và kiểm tra hợp lệ."""
