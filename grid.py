@@ -157,7 +157,7 @@ class Grid:
         self.draw_number_selection_menu(surface)
         if self.status_message:
             message_surface = self.game_font.render(self.status_message, True, (255, 255, 255))
-            surface.blit(message_surface, (50, grid_size * self.cell_size + 50))
+            surface.blit(message_surface, (50, grid_size * self.cell_size + 60))
 
 
     def draw_number_selection_menu(self, surface):
@@ -193,6 +193,16 @@ class Grid:
     def handle_mouse_click(self, pos):
         """Xử lý sự kiện khi người chơi click chuột vào một ô hoặc bảng chọn số."""
         x, y = pos[0] // self.cell_size, pos[1] // self.cell_size
+
+        clear_x1 = grid_size * self.cell_size + 20
+        clear_y1 = 5 * self.cell_size + 270
+        clear_x2 = clear_x1 + 100
+        clear_y2 = clear_y1 + 50
+        if clear_x1 <= pos[0] <= clear_x2 and clear_y1 <= pos[1] <= clear_y2:
+            self.clear_grid()
+            self.update_status_message("Lưới đã được xóa!")
+            return
+
         # Kiểm tra click trong lưới Sudoku
         if x < grid_size and y < grid_size:
             self.selected_cell = (x, y)
@@ -200,9 +210,10 @@ class Grid:
             if not self.occupied_cells[y][x] and self.selected_number is not None:
                 if self.is_number_valid(self.selected_number, x, y):
                     self.set_cell(x, y, self.selected_number)
-                    self.status_message = f"Number {self.selected_number} is placed in box ({x}, {y})"
+                    self.update_status_message(f"Number {self.selected_number} is placed in box ({x}, {y})")
                 else:
-                    self.status_message = "Error: Number is invalid!"
+                    self.update_status_message("Error: Number is invalid!")
+
         # Kiểm tra click trong bảng chọn số
         elif (grid_size * self.cell_size + 20 <= pos[0] <= grid_size * self.cell_size + 140 and
               20 <= pos[1] <= 320):
@@ -211,6 +222,10 @@ class Grid:
             # Click ngoài lưới Sudoku và bảng chọn số
             self.selected_cell = None
             self.status_message = ""  # Xóa thông báo
+
+    def update_status_message(self, message):
+        """Cập nhật thông báo trạng thái, thay thế thông báo cũ."""
+        self.status_message = message
 
     def handle_number_selection(self, pos):
         """Xử lý chọn số từ bảng chọn số."""
@@ -277,10 +292,15 @@ class Grid:
         self.grid[y][x] = current_value
         return is_valid
 
-
+    def clear_grid(self):
+        """Xóa toàn bộ các số đã điền, giữ nguyên các số mặc định."""
+        for y in range(grid_size):
+            for x in range(grid_size):
+                if not self.occupied_cells[y][x]:  # Chỉ xóa các ô không bị khóa
+                    self.grid[y][x] = 0  # Đặt lại giá trị của ô về 0
 
 if __name__ == '__main__':
     pg.font.init()
-    game_font = pg.font.SysFont(name='Cascadia Code', size=30)  # Giảm kích thước font chữ
+    game_font = pg.font.SysFont(name='Comic Sans MS', size=30)
     grid = Grid(game_font)
     grid.show()

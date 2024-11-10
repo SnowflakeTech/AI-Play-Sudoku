@@ -22,30 +22,18 @@ game_font = pg.font.SysFont(name='Comic Sans MS', size=30)
 menu_font = pg.font.SysFont(name='Comic Sans MS', size=50)
 
 def show_message(surface, message, font, color, position):
-    """
-    Hiển thị thông báo lên màn hình.
-    Args:
-        surface: Màn hình để vẽ.
-        message: Nội dung thông báo.
-        font: Font chữ sử dụng.
-        color: Màu chữ.
-        position: Vị trí hiển thị (tuple x, y).
-    """
-    # Xóa vùng thông báo cũ bằng cách vẽ một hình chữ nhật màu nền
     pg.draw.rect(surface, (0, 0, 0), (position[0], position[1], 300, 50))
-    # Vẽ thông báo mới
     text_surface = font.render(message, True, color)
     surface.blit(text_surface, position)
 
-# Hàm chính để chạy trò chơi
 def play_game():
-    """Chạy trò chơi Sudoku."""
     countdown_time = 600  # Thời gian đếm ngược tính theo giây
     clock = pg.time.Clock()
 
     grid = Grid(game_font)
     running = True
     current_message = ""  # Lưu thông báo hiện tại
+    message_timer = 0  # Đếm thời gian hiển thị thông báo
 
     while running:
         for event in pg.event.get():
@@ -61,19 +49,24 @@ def play_game():
                         for j in range(9):
                             for i in range(9):
                                 grid.set_cell(i, j, board[j][i])
-                        current_message = "Solved successfully!"
+                        grid.update_status_message("Solved successfully!")
+                        message_timer = 3  # Hiển thị thông báo trong 3 giây
                     else:
-                        current_message = "Failed to solve Sudoku."
+                        grid.update_status_message("Failed to solve Sudoku.")
+                        message_timer = 3  # Hiển thị thông báo trong 3 giây
 
                 # Kiểm tra nếu nhấn nút Check
                 elif grid_size * grid.cell_size + 20 <= x <= grid_size * grid.cell_size + 120 and 5 * grid.cell_size + 200 <= y <= 5 * grid.cell_size + 250:
                     if grid.is_valid_grid():
-                        current_message = "Sudoku is valid!"
+                        grid.update_status_message("Sudoku is valid!")
+                        message_timer = 3  # Hiển thị thông báo trong 3 giây
                     else:
-                        current_message = "Sudoku is invalid!"
+                        grid.update_status_message("Sudoku is invalid!")
+                        message_timer = 3  # Hiển thị thông báo trong 3 giây
                 # Xử lý click vào lưới Sudoku
                 else:
                     grid.handle_mouse_click((x, y))
+
 
         surface.fill((0, 0, 0))
         grid.draw(surface)
@@ -94,6 +87,13 @@ def play_game():
         check_text_rect = check_text.get_rect(center=check_rect.center)
         surface.blit(check_text, check_text_rect)
 
+        clear_button = pg.Rect(grid_size * grid.cell_size + 20, 5 * grid.cell_size + 270, 100, 50)
+        pg.draw.rect(surface, (0, 0, 0), clear_button)
+        pg.draw.rect(surface, (255, 255, 255), clear_button, 3)
+        clear_text = game_font.render("Clear", True, (255, 255, 255))
+        clear_text_rect = clear_text.get_rect(center=clear_button.center)
+        surface.blit(clear_text, clear_text_rect)
+
         # Hiển thị thời gian đếm ngược
         countdown_time -= 1 / 60
         minutes = int(countdown_time) // 60
@@ -103,7 +103,11 @@ def play_game():
         surface.blit(time_surface, (grid_size * grid.cell_size + 20, 5 * grid.cell_size + 20 + 60))
 
         # Hiển thị thông báo
-        show_message(surface, current_message, game_font, (255, 255, 255), (80, 450))
+        if current_message:
+            show_message(surface, current_message, game_font, (255, 255, 255), (80, 450))
+            message_timer -= 1 / 60  # Giảm thời gian còn lại
+            if message_timer <= 0:
+                current_message = ""  # Ẩn thông báo khi hết thời gian
 
         pg.display.update()
         clock.tick(60)
@@ -122,4 +126,3 @@ if __name__ == "__main__":
         except SystemExit:
             break
     pg.quit()
-
