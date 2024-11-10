@@ -39,6 +39,9 @@ def play_game():
         for event in pg.event.get():
             if event.type == pg.QUIT:
                 running = False
+            elif event.type == pg.KEYDOWN:
+                if event.key == pg.K_ESCAPE:  # Phím ESC được nhấn
+                    return "menu"  # Quay lại menu chính và làm mới Sudoku
             elif event.type == pg.MOUSEBUTTONDOWN:
                 x, y = pg.mouse.get_pos()
 
@@ -120,9 +123,18 @@ if __name__ == "__main__":
         try:
             choice = main_menu(surface, WIDTH, HEIGHT)
             if choice == "play":
-                play_game()
+                # Nếu từ game quay lại menu, sẽ lặp lại menu chính
+                game_state = play_game()
+                if game_state == "menu":
+                    continue
+                elif game_state == "quit":
+                    break
             elif choice == "instructions":
                 show_instructions(surface, game_font, WIDTH, HEIGHT)
+            elif choice == "quit":
+                pg.quit()
+                break
         except SystemExit:
             break
     pg.quit()
+
