@@ -1,6 +1,9 @@
 import unittest
 from grid import Grid, create_grid, remove_numbers, grid_size, sub_grid_size
 import pygame as pg
+from grid import Grid, grid_size
+from solve import solve_sudoku
+import time
 
 class TestSudoku(unittest.TestCase):
     def setUp(self):
@@ -54,16 +57,14 @@ class TestSudoku(unittest.TestCase):
             pg.font.init()
             self.font = pg.font.SysFont("Comic Sans MS", 30)
             self.grid = Grid(self.font)
-            self.surface = pg.Surface((600, 600))
 
         def test_clear_button(self):
             """Kiểm tra nút Clear hoạt động đúng."""
-            # Mô phỏng nhấn nút Clear
             clear_x, clear_y = grid_size * self.grid.cell_size + 30, 5 * self.grid.cell_size + 280
             event = pg.event.Event(pg.MOUSEBUTTONDOWN, {"pos": (clear_x, clear_y)})
             self.grid.handle_mouse_click(event.pos)
 
-            # Kiểm tra lưới đã được xóa
+            # Kiểm tra các ô đã bị xóa
             for y in range(grid_size):
                 for x in range(grid_size):
                     if not self.grid.occupied_cells[y][x]:
@@ -71,12 +72,71 @@ class TestSudoku(unittest.TestCase):
 
         def test_number_selection(self):
             """Kiểm tra chọn số từ bảng chọn số."""
-            number_x, number_y = grid_size * self.grid.cell_size + 40, 40
+            number_x, number_y = grid_size * self.grid.cell_size + 40, 40  # Toạ độ giả định
             event = pg.event.Event(pg.MOUSEBUTTONDOWN, {"pos": (number_x, number_y)})
             self.grid.handle_mouse_click(event.pos)
 
             # Kiểm tra số được chọn
             self.assertEqual(self.grid.selected_number, 1)
+
+        def test_click_on_grid(self):
+            """Kiểm tra nhấn vào ô trong lưới."""
+            self.grid.selected_number = 5  # Chọn số để điền
+            cell_x, cell_y = 2 * self.grid.cell_size, 3 * self.grid.cell_size  # Vị trí ô
+            event = pg.event.Event(pg.MOUSEBUTTONDOWN, {"pos": (cell_x, cell_y)})
+            self.grid.handle_mouse_click(event.pos)
+
+            # Kiểm tra số đã được điền đúng vào ô
+            self.assertEqual(self.grid.get_cell(2, 3), 5)
+
+        def test_highlight_cells(self):
+            """Kiểm tra làm nổi bật hàng và cột khi một ô được chọn."""
+            cell_x, cell_y = 2 * self.grid.cell_size, 3 * self.grid.cell_size  # Vị trí ô
+            event = pg.event.Event(pg.MOUSEBUTTONDOWN, {"pos": (cell_x, cell_y)})
+            self.grid.handle_mouse_click(event.pos)
+
+            # Kiểm tra danh sách các ô được làm nổi bật
+            expected_highlighted = [(2, i) for i in range(grid_size)] + [(i, 3) for i in range(grid_size)]
+            self.assertEqual(self.grid.highlighted_cells, expected_highlighted)
+
+        def test_invalid_click(self):
+            """Kiểm tra nhấn chuột ngoài vùng lưới và menu."""
+            outside_x, outside_y = 700, 700  # Toạ độ ngoài giao diện
+            event = pg.event.Event(pg.MOUSEBUTTONDOWN, {"pos": (outside_x, outside_y)})
+            self.grid.handle_mouse_click(event.pos)
+
+            # Kiểm tra không có ô nào được chọn
+            self.assertIsNone(self.grid.selected_cell)
+
+    class TestSudokuSolvePerformance(unittest.TestCase):
+        def setUp(self):
+            """Thiết lập lưới Sudoku mẫu cho kiểm thử."""
+            self.sudoku_board = [
+                [5, 3, 0, 0, 7, 0, 0, 0, 0],
+                [6, 0, 0, 1, 9, 5, 0, 0, 0],
+                [0, 9, 8, 0, 0, 0, 0, 6, 0],
+                [8, 0, 0, 0, 6, 0, 0, 0, 3],
+                [4, 0, 0, 8, 0, 3, 0, 0, 1],
+                [7, 0, 0, 0, 2, 0, 0, 0, 6],
+                [0, 6, 0, 0, 0, 0, 2, 8, 0],
+                [0, 0, 0, 4, 1, 9, 0, 0, 5],
+                [0, 0, 0, 0, 8, 0, 0, 7, 9],
+            ]
+
+        def test_solve_time(self):
+            """Kiểm tra thời gian giải Sudoku trong giới hạn chấp nhận."""
+            max_time = 1.0  # Giới hạn thời gian (giây)
+            start_time = time.time()
+            solved = solve_sudoku(self.sudoku_board)
+            end_time = time.time()
+            elapsed_time = end_time - start_time
+
+            # Kiểm tra kết quả giải
+            self.assertTrue(solved, "Sudoku could not be solved.")
+            # Kiểm tra thời gian thực thi
+            self.assertLess(elapsed_time, max_time, f"Sudoku solving took too long: {elapsed_time:.4f} seconds.")
+
+            print(f"Thời gian giải Sudoku: {elapsed_time:.4f} giây")
 
 if __name__ == "__main__":
     unittest.main()

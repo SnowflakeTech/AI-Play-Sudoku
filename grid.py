@@ -281,6 +281,10 @@ class Grid:
 
     def is_number_valid(self, number, x, y) -> bool:
         """Kiểm tra xem số có hợp lệ tại vị trí x, y không."""
+        # Kiểm tra số nằm trong khoảng hợp lệ (1-9)
+        if number < 1 or number > 9:
+            return False
+
         # Tạm thời lưu số hiện tại trong ô để kiểm tra
         current_value = self.grid[y][x]
         self.grid[y][x] = number
